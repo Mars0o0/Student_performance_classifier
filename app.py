@@ -132,44 +132,39 @@ sidebar = ui.div(
         class_="brand"),
     ui.div(nav_button("home", "Home", True), nav_button("predict", "Predict"),
            nav_button("insights", "Insights"), nav_button("about", "About"), class_="nav"),
-    ui.div(ui.div("Test accuracy (unseen, unique records)", class_="k"),
+    ui.div(ui.div("Test accuracy", class_="k"),
            ui.div(pc(T["accuracy"]), class_="v"),
-           ui.p("An estimate for guidance only. Not a guarantee of any student's outcome."),
+           ui.p("For guidance only."),
            class_="side-card"),
     class_="side")
 
 # ---------------------------------------------------------------- HOME
 home = ui.div(
     ui.div(ui.h1("Student Performance Classifier"),
-           ui.p("Estimate whether a student's Learning Management System (LMS) activity looks like students "
-                "rated High or Low, and see what the model learned along the way."), class_="page-head"),
+           ui.p("Predicts a High or Low rating from a student's LMS activity."), class_="page-head"),
     ui.div(
-        stat("Unique records", f"{D['unique_rows']:,}", f"{D['rows_supplied']:,} rows in the file, {D['exact_duplicate_copies']} repeats"),
-        stat("Predictors", f"{D['n_predictors']}", "LMS activity counts"),
+        stat("Unique records", f"{D['unique_rows']:,}", f"from {D['rows_supplied']:,} rows"),
+        stat("Predictors", f"{D['n_predictors']}", "Activity counts"),
         stat("Model", M["selected_model"], f"{M['selected_params']['n_estimators']} trees"),
         stat("Test accuracy", pc(T["accuracy"]), f"95% range {pc(T['accuracy_ci95'][0], 0)} to {pc(T['accuracy_ci95'][1], 0)}"),
         class_="stat-strip"),
     ui.div(
-        ui.h2("How to use this app"),
-        ui.p("Predict turns eight activity numbers into a High or Low estimate. Insights explains the data and the "
-             "model so the estimate is easier to judge.", class_="sub"),
+        ui.h2("How to use"),
         ui.div(
-            ui.div(ui.div("1", class_="no"), ui.HTML("<b>Enter activity</b><span>Type a student's eight LMS counts, or start from a typical High or Low profile.</span>"), class_="step"),
-            ui.div(ui.div("2", class_="no"), ui.HTML("<b>Read the estimate</b><span>See the predicted rating, how confident the model is, and what pushed it that way.</span>"), class_="step"),
-            ui.div(ui.div("3", class_="no"), ui.HTML("<b>Check the context</b><span>Use Insights to see which activities matter, and when to be careful.</span>"), class_="step"),
+            ui.div(ui.div("1", class_="no"), ui.HTML("<b>Enter activity</b><span>Type eight LMS counts, or use a typical profile.</span>"), class_="step"),
+            ui.div(ui.div("2", class_="no"), ui.HTML("<b>Read the estimate</b><span>Rating, confidence and what drove it.</span>"), class_="step"),
+            ui.div(ui.div("3", class_="no"), ui.HTML("<b>Check Insights</b><span>See which activities matter.</span>"), class_="step"),
             class_="steps"),
         ui.div(ui.input_action_button("cta_predict", "Make a prediction", class_="btn-cta p"),
                ui.input_action_button("cta_insights", "Explore insights", class_="btn-cta s"), class_="cta-row"),
         class_="panel"),
     ui.div(
-        ui.h2("About the accuracy figure"),
+        ui.h2("Accuracy"),
         callout("warn", ui.HTML(
-            f"<b>The honest number is {pc(T['accuracy'])}, not 90%.</b> The supplied file has {D['exact_duplicate_copies']} exact repeated rows "
-            f"({D['duplicate_copies_by_class']['Low']} of them Low), which largely accounts for its 50/50 balance. "
-            f"When repeats are split across training and testing, the same model scores {pc(M['raw_split_comparison']['test_accuracy'])}, "
-            f"because {M['raw_split_comparison']['test_rows_with_exact_copy_in_train']} of {M['raw_split_comparison']['test_rows']} test rows have an identical copy in the training set. "
-            "This app removes repeats before splitting, so the test result reflects records the model has never seen.")),
-        ui.p(f"For context, always guessing the larger class (High) would be right about {pc(D['majority_baseline_train'], 0)} of the time on the unique data."),
+            f"<b>{pc(T['accuracy'])} on unseen records.</b> The file has {D['exact_duplicate_copies']} repeated rows. "
+            f"Left in, they appear in both training and test data and the score rises to {pc(M['raw_split_comparison']['test_accuracy'])}. "
+            "They are removed here.")),
+        ui.p(f"Always guessing High would be right about {pc(D['majority_baseline_train'], 0)} of the time."),
         class_="panel"),
     class_="page")
 
@@ -182,7 +177,7 @@ def field(f):
 
 
 predict_page = ui.div(
-    ui.div(ui.h1("Predict"), ui.p("Enter a student's LMS activity counts. The saved model estimates a High or Low rating."), class_="page-head"),
+    ui.div(ui.h1("Predict"), ui.p("Enter LMS activity counts to estimate a High or Low rating."), class_="page-head"),
     ui.div(
         ui.div(
             ui.h2("Student LMS activity"),
@@ -200,8 +195,7 @@ predict_page = ui.div(
         ),
         class_="grid-predict"),
     ui.div(
-        ui.h2("The model behind the prediction"),
-        ui.p("A single saved model is loaded when the app opens. It is not retrained.", class_="sub"),
+        ui.h2("Model"),
         ui.div(
             ui.div(
                 kv("Algorithm", M["selected_model"]),
@@ -215,8 +209,7 @@ predict_page = ui.div(
                        ui.div(ui.div("High recall", class_="k"), ui.div(pc(T["report"]["High"]["recall"]), class_="v"), class_="mini"),
                        ui.div(ui.div("Low recall", class_="k"), ui.div(pc(T["report"]["Low"]["recall"]), class_="v"), class_="mini"),
                        class_="mini-stats"),
-                ui.p("Recall is the share of real High (or Low) students the model correctly found. Low is harder for this model.",
-                     class_="sub", style="margin-top:12px"),
+                ui.p("Recall: share of real students the model finds.", class_="sub", style="margin-top:12px"),
             ),
             class_="grid-2"),
         class_="panel"),
@@ -225,7 +218,7 @@ predict_page = ui.div(
 # ---------------------------------------------------------------- INSIGHTS
 sel_choices = {f: L[f] for f in IMP_ORDER}
 insights_page = ui.div(
-    ui.div(ui.h1("Insights"), ui.p("What the data shows, what the model learned, and how far to trust it."), class_="page-head"),
+    ui.div(ui.h1("Insights"), ui.p("Data, model and reliability."), class_="page-head"),
 
     ui.div(ui.span("Key findings"), ui.span("start here", class_="pill"), class_="section-title"),
     ui.output_ui("findings"),
@@ -238,31 +231,29 @@ insights_page = ui.div(
         stat("High share (unique)", pc(D['class_counts_unique']['High'] / D['unique_rows'], 0), f"{D['class_counts_unique']['High']:,} High, {D['class_counts_unique']['Low']:,} Low"),
         class_="stat-strip"),
     ui.div(
-        ui.div(ui.h2("Was the file really balanced?"),
-               ui.p("The file shows 1,801 High and 1,801 Low. Most of the repeated rows are Low, so the balance comes largely from copying Low records.", class_="sub"),
+        ui.div(ui.h2("Class balance"),
+               ui.p("Most repeated rows are Low.", class_="sub"),
                ui.output_ui("plot_balance"), class_="panel"),
-        ui.div(ui.h2("Why this matters"),
-               ui.HTML("<p>If a record and its exact copy land on opposite sides of the train/test split, the model is tested on something it already saw. That inflates accuracy.</p>"),
-               ui.HTML(f"<p>There are no original-record IDs, so only exact copies can be detected. Near-copies (rows that were slightly altered) cannot be confirmed and may remain. "
-                       f"{D['conflicting_label_groups']} sets of identical inputs also carry both labels, which caps the accuracy any model can reach.</p>"),
+        ui.div(ui.h2("Data quality"),
+               ui.HTML("<p>Repeated rows can land in both training and test sets and inflate accuracy.</p>"),
+               ui.HTML(f"<p>Near-copies cannot be detected. {D['conflicting_label_groups']} sets of identical inputs carry both labels.</p>"),
                ui.output_ui("desc_table"), class_="panel"),
         class_="grid-2"),
 
     ui.div(ui.span("B. Student activity analysis"), class_="section-title"),
     ui.div(
-        ui.h2("How does each activity differ between High and Low?"),
-        ui.p("Pick an activity. Counts use a log scale because a few students have very large values.", class_="sub"),
+        ui.h2("Activity by rating"),
+        ui.p("Log scale.", class_="sub"),
         ui.input_select("feat_pick", None, sel_choices, selected=IMP_ORDER[0]),
         ui.output_ui("plot_dist"),
         class_="panel"),
     ui.div(
         ui.div(ui.h2("Side-by-side comparison"),
-               ui.p("The last column is the chance that a random High student has more of the activity than a random Low student. 0.50 means no difference.", class_="sub"),
+               ui.p("P(High > Low): chance a random High student has more than a random Low student. 0.50 means no difference.", class_="sub"),
                ui.output_ui("compare_table"),
-               ui.p("With 2,720 records, even small differences get tiny p-values. Judge by the size of the gap, not by the p-value alone.", class_="sub", style="margin-top:10px"),
                class_="panel"),
-        ui.div(ui.h2("Which activities move together?"),
-               ui.p("Spearman correlation between activities.", class_="sub"),
+        ui.div(ui.h2("Correlation"),
+               ui.p("Spearman.", class_="sub"),
                ui.output_ui("plot_heat"),
                ui.output_ui("heat_note"), class_="panel"),
         class_="grid-2"),
@@ -270,9 +261,9 @@ insights_page = ui.div(
     ui.div(ui.span("C. Model performance"), class_="section-title"),
     ui.div(
         stat("Accuracy", pc(T["accuracy"]), f"95% range {pc(T['accuracy_ci95'][0])} to {pc(T['accuracy_ci95'][1])}"),
-        stat("Balanced accuracy", pc(T["balanced_accuracy"]), "average of High and Low recall"),
-        stat("Macro F1", pc(T["macro_f1"]), "average of High and Low F1"),
-        stat("ROC AUC", f"{T['roc_auc']:.2f}", "ranking quality (1.0 is perfect)"),
+        stat("Balanced accuracy", pc(T["balanced_accuracy"]), "mean recall"),
+        stat("Macro F1", pc(T["macro_f1"]), "mean F1"),
+        stat("ROC AUC", f"{T['roc_auc']:.2f}", "1.0 is perfect"),
         class_="stat-strip"),
     ui.div(
         ui.div(ui.h2("Confusion matrix"),
@@ -281,37 +272,36 @@ insights_page = ui.div(
                ui.output_ui("cm_note"), class_="panel"),
         ui.div(ui.h2("Per-class results"),
                ui.output_ui("report_table"),
-               ui.h3("Models compared (5-fold cross-validation on training data)"),
+               ui.h3("Models compared (5-fold CV)"),
                ui.output_ui("comparison_table"), class_="panel"),
         class_="grid-2"),
     ui.div(
-        ui.h2("Is the 90% target reachable honestly?"),
+        ui.h2("The 90% target"),
         ui.output_ui("target_note"), class_="panel"),
 
     ui.div(ui.span("D. What the model relies on"), class_="section-title"),
     ui.div(
-        ui.div(ui.h2("Permutation importance (held-out test set)"),
-               ui.p("How much accuracy drops when one activity's values are shuffled. Longer bar means the model leans on it more.", class_="sub"),
+        ui.div(ui.h2("Permutation importance"),
+               ui.p("Accuracy lost when an activity is shuffled.", class_="sub"),
                ui.output_ui("plot_imp"),
-               ui.p("Importance shows what the model uses, not what causes a rating. Activities that overlap with others can look less important than they are.", class_="sub"),
                class_="panel"),
-        ui.div(ui.h2("Importance, two ways"),
-               ui.p("A second check: retrain without one activity and see how much cross-validated accuracy changes.", class_="sub"),
+        ui.div(ui.h2("Drop-one check"),
+               ui.p("Accuracy change when an activity is removed.", class_="sub"),
                ui.output_ui("imp_table"), class_="panel"),
         class_="grid-2"),
     ui.div(
-        ui.h2("How does the prediction change as an activity changes?"),
-        ui.p("Average estimated chance of High when one activity is set to each value and the others stay as in the training data.", class_="sub"),
+        ui.h2("Effect of each activity"),
+        ui.p("Average chance of High as one activity changes.", class_="sub"),
         ui.input_select("pdp_pick", None, sel_choices, selected=IMP_ORDER[0]),
         ui.output_ui("plot_pdp"),
         ui.output_ui("pdp_note"), class_="panel"),
-    ui.div(ui.span("E. How far to trust the probabilities"), class_="section-title"),
+    ui.div(ui.span("E. Reliability"), class_="section-title"),
     ui.div(
         ui.div(ui.h2("Calibration"),
-               ui.p("If the model says 70%, is it right about 70% of the time? Closer to the dashed line is better.", class_="sub"),
+               ui.p("Closer to the dashed line is better.", class_="sub"),
                ui.output_ui("plot_cal"), class_="panel"),
         ui.div(ui.h2("Accuracy by confidence"),
-               ui.p("On the unseen test records, grouped by how confident the model was.", class_="sub"),
+               ui.p("Unseen test records, grouped by confidence.", class_="sub"),
                ui.output_ui("conf_table"), ui.output_ui("conf_note"), class_="panel"),
         class_="grid-2"),
     class_="page")
@@ -334,45 +324,39 @@ about_page = ui.div(
     ui.div(
         ui.div(
             ui.div(ui.h2("Purpose"),
-                   ui.p("Learning management systems record how students interact with a course: submissions, quizzes, forum posts, "
-                        "reading and logins. This project uses those records to classify a student's rating as High or Low so that "
-                        "instructors can notice who may need support while there is still time to act."),
-                   ui.p("The model predicts the original dataset labels, High and Low. No official mapping to Pass or Fail was provided, "
-                        "so none is assumed."), class_="panel"),
+                   ui.p("Uses LMS activity (submissions, quizzes, forums, reads, logins) to classify a student's rating as High or Low, so instructors can spot who may need support early."),
+                   ui.p("Labels are the dataset's own High and Low. No Pass/Fail mapping was provided."), class_="panel"),
             ui.div(ui.h2("Dataset"),
-                   ui.p(f"The file augmented_balanced_dataset_m.csv has {D['rows_supplied']:,} rows, eight numeric LMS predictors and one target, rating. "
-                        f"It contains {D['exact_duplicate_copies']} exact repeated rows, leaving {D['unique_rows']:,} unique records "
-                        f"({D['class_counts_unique']['High']:,} High, {D['class_counts_unique']['Low']:,} Low). The source of the data was not stated in the files provided."),
+                   ui.p(f"augmented_balanced_dataset_m.csv: {D['rows_supplied']:,} rows, 8 predictors, 1 target (rating). {D['exact_duplicate_copies']} repeated rows removed, leaving {D['unique_rows']:,} unique ({D['class_counts_unique']['High']:,} High, {D['class_counts_unique']['Low']:,} Low). Source not stated."),
                    table(["Variable", "Description"], [[f"<code>{f}</code>", VAR_DESC[f]] for f in FEATURES] +
                          [["<code>rating</code>", "Target class: High or Low"]]), class_="panel"),
             ui.div(ui.h2("Method"),
                    ui.HTML(f"""<ul class="clean">
-                   <li><b>Inspection:</b> no missing or negative values; 8 predictors are whole-number counts; Read.Actions has extreme outliers (maximum {int(DF['Read.Actions'].max()):,}).</li>
-                   <li><b>Cleaning:</b> exact repeated rows were removed before any splitting, to prevent copies appearing in both training and test sets.</li>
-                   <li><b>Split:</b> stratified 80/20 split with random_state=42 ({D['train_rows']:,} train, {D['test_rows']:,} test). The test set was used once, at the end.</li>
-                   <li><b>Model selection:</b> seven classifiers were compared with 5-fold cross-validation on the training set only; the best were tuned with randomized search.</li>
-                   <li><b>Final model:</b> {M['selected_model']} ({M['selected_params']['n_estimators']} trees), saved as a scikit-learn pipeline with Joblib and loaded by this app.</li>
-                   <li><b>Interpretation:</b> permutation importance on the test set, drop-one-feature checks, partial dependence, and calibration.</li></ul>"""),
+                   <li><b>Cleaning:</b> repeated rows removed before splitting. No missing values; Read.Actions has extreme outliers (max {int(DF['Read.Actions'].max()):,}).</li>
+                   <li><b>Split:</b> stratified 80/20 ({D['train_rows']:,} train, {D['test_rows']:,} test).</li>
+                   <li><b>Selection:</b> seven classifiers compared with 5-fold cross-validation, then tuned.</li>
+                   <li><b>Final model:</b> {M['selected_model']} ({M['selected_params']['n_estimators']} trees), saved with Joblib.</li>
+                   <li><b>Interpretation:</b> permutation importance, drop-one checks, partial dependence, calibration.</li></ul>"""),
                    class_="panel"),
             ui.div(ui.h2("Model results"),
-                   ui.p(f"On {D['test_rows']} unseen records the model reached {pc(T['accuracy'])} accuracy (95% range {pc(T['accuracy_ci95'][0])} to {pc(T['accuracy_ci95'][1])}). "
+                   ui.p(f"{D['test_rows']} unseen records: {pc(T['accuracy'])} accuracy (95% range {pc(T['accuracy_ci95'][0])} to {pc(T['accuracy_ci95'][1])}). "
                         f"High: precision {pc(T['report']['High']['precision'])}, recall {pc(T['report']['High']['recall'])}. "
                         f"Low: precision {pc(T['report']['Low']['precision'])}, recall {pc(T['report']['Low']['recall'])}."),
                    ui.output_ui("about_target"), class_="panel"),
             ui.div(ui.h2("Interpreting a prediction"),
                    ui.HTML("""<ul class="clean">
-                   <li>A <b>High</b> prediction means the activity pattern resembles students rated High. It does not guarantee success.</li>
-                   <li>A <b>Low</b> prediction means it resembles students rated Low. It does not mean the student will fail.</li>
-                   <li>The percentage is the model's confidence, and it is least reliable between 50% and 70%.</li>
-                   <li>Use predictions to start a conversation or offer support, never as the only basis for a decision about a student.</li></ul>"""),
+                   <li><b>High:</b> resembles High-rated students. Not a guarantee of success.</li>
+                   <li><b>Low:</b> resembles Low-rated students. Not a prediction of failure.</li>
+                   <li>Confidence is least reliable between 50% and 70%.</li>
+                   <li>Use it to start a conversation or offer support, not to decide alone.</li></ul>"""),
                    class_="panel"),
             ui.div(ui.h2("Limitations"),
                    ui.HTML(f"""<ul class="clean">
-                   <li><b>Data:</b> the file was augmented and contained {D['exact_duplicate_copies']} repeated rows. Near-copies cannot be ruled out, so real-world accuracy may be lower than {pc(T['accuracy'], 0)}.</li>
-                   <li><b>What the data measures:</b> LMS counts show clicks, not learning. Students who study offline, in groups, or on paper look inactive. The rating's definition and time period are not documented in the files provided.</li>
-                   <li><b>Generalization:</b> the model reflects one course population. A different course, term, or LMS setup may behave differently. Very large values (above the 99th percentile) are rare in training.</li>
-                   <li><b>Interpretation:</b> importance and partial dependence describe the model, not causes. For example, more quiz actions pointing toward Low does not mean quizzes harm ratings.</li>
-                   <li><b>Errors have costs:</b> a wrongly predicted Low may label a student unfairly; a wrongly predicted High may miss someone who needs help. About {pc(1 - T['accuracy'], 0)} of test predictions were wrong.</li></ul>"""),
+                   <li><b>Data:</b> augmented file with {D['exact_duplicate_copies']} repeated rows. Near-copies may remain, so real accuracy may be below {pc(T['accuracy'], 0)}.</li>
+                   <li><b>Clicks, not learning:</b> offline or group study looks inactive. The rating's definition is not documented.</li>
+                   <li><b>One course population:</b> other courses or terms may differ. Very large values are rare in training.</li>
+                   <li><b>Not causal:</b> importance shows what the model uses, not why ratings differ.</li>
+                   <li><b>Errors matter:</b> a wrong Low may label a student unfairly; a wrong High may miss someone who needs help. About {pc(1 - T['accuracy'], 0)} of test predictions were wrong.</li></ul>"""),
                    class_="panel"),
             class_="col-main"),
         ui.div(
@@ -508,29 +492,27 @@ def server(input, output, session):
     def result_panel():
         if input.predict() == 0:
             return ui.div(ui.div(ui.tags.b("No prediction yet"),
-                                 "Set the eight values and press Predict rating."), class_="empty panel")
+                                 "Enter values, then press Predict rating."), class_="empty panel")
         r = result()
         if "errors" in r:
             return ui.div(ui.h2("Please fix the inputs"),
                           callout("err", ui.HTML("<br>".join(r["errors"]))), class_="panel")
         hi = r["label"] == "High"
         pct_h, pct_l = 100 * r["p"], 100 * (1 - r["p"])
-        meaning = ("The activity pattern looks more like students rated <b>High</b> in the training data."
-                   if hi else "The activity pattern looks more like students rated <b>Low</b> in the training data.")
-        bits = [ui.HTML(f"<p>{meaning} It does not mean the student will pass or fail.</p>")]
+        meaning = ("Resembles students rated <b>High</b>." if hi else "Resembles students rated <b>Low</b>.")
+        bits = [ui.HTML(f"<p>{meaning} Not a pass or fail prediction.</p>")]
         if r["band"]:
             tone = "warn" if r["conf"] < 0.7 else "info"
-            txt = (f"On unseen test records, predictions with this level of confidence ({r['band']['band']}) were correct "
+            txt = (f"Predictions at this confidence ({r['band']['band']}) were correct "
                    f"{pc(r['band']['accuracy'], 0)} of the time ({r['band']['n']} records).")
             if r["conf"] < 0.7:
-                txt = "<b>Treat this as uncertain.</b> " + txt
+                txt = "<b>Uncertain.</b> " + txt
             bits.append(callout(tone, ui.HTML(txt)))
         if r["outliers"]:
             bits.append(callout("warn", ui.HTML(
-                "<b>Unusually high input:</b> " + ", ".join(r["outliers"]) +
-                " is above 99% of the training records, so the model has little to compare against.")))
-        bits.append(ui.p("This is an estimate from LMS activity only, not a guaranteed academic outcome. "
-                         "It should support, not replace, human judgment.", class_="sub"))
+                "<b>Unusually high:</b> " + ", ".join(r["outliers"]) +
+                " is above 99% of training records.")))
+        bits.append(ui.p("Estimate only. It should support, not replace, human judgment.", class_="sub"))
         return ui.div(
             ui.h2("Result"),
             ui.div(ui.div(f"{r['label']} rating", class_=f"badge-res {'high' if hi else 'low'}"),
@@ -549,10 +531,10 @@ def server(input, output, session):
             return ui.div()
         return ui.div(
             ui.div(ui.h2("Where this student sits"),
-                   ui.p("Each row compares the entered value with all unique training records.", class_="sub"),
+                   ui.p("Percentile against training records.", class_="sub"),
                    ui.output_ui("plot_profile"), class_="panel"),
             ui.div(ui.h2("What pushed this prediction"),
-                   ui.p("Blue: this value makes High more likely than a typical value would. Amber: less likely. It is a what-if check for this one student, so it can differ from the overall pattern because activities interact.", class_="sub"),
+                   ui.p("Blue raises the chance of High. Amber lowers it.", class_="sub"),
                    ui.output_ui("plot_local"), class_="panel"))
 
     @plot_ui("Where the entered student sits compared with typical High and Low students")
@@ -620,7 +602,7 @@ def server(input, output, session):
         pairs.sort(reverse=True)
         top = pairs[:3]
         txt = "; ".join(f"{L[a]} and {L[b]} ({v:+.2f})" for _, a, b, v in top)
-        return ui.p(f"Strongest links: {txt}. Closely related activities share information, so the model may rely on one and ignore its partner.", class_="sub")
+        return ui.p(f"Strongest links: {txt}.", class_="sub")
 
     @render.ui
     def cm_note():
@@ -632,10 +614,10 @@ def server(input, output, session):
         rep = T["report"]
         rows = [[c, pc(rep[c]["precision"]), pc(rep[c]["recall"]), pc(rep[c]["f1-score"]), f"{int(rep[c]['support'])}"] for c in ("High", "Low")]
         gap = rep["High"]["f1-score"] - rep["Low"]["f1-score"]
-        note = (f"Low is harder to predict: its F1 is {abs(gap) * 100:.0f} points lower than High's." if gap > 0.03
-                else "The model performs similarly for both classes.")
+        note = (f"Low is harder to predict: F1 is {abs(gap) * 100:.0f} points lower." if gap > 0.03
+                else "Similar performance for both classes.")
         return ui.div(table(["Class", "Precision", "Recall", "F1", "Records"], rows, num={1, 2, 3, 4}),
-                      ui.p("Precision: when the model says this class, how often it is right. Recall: how many real members of the class it finds.", class_="sub", style="margin-top:10px"),
+                      ui.p("Precision: how often a prediction is right. Recall: how many real students are found.", class_="sub", style="margin-top:10px"),
                       ui.p(note))
 
     @render.ui
@@ -643,15 +625,13 @@ def server(input, output, session):
         rows = [[c["model"], pc(c["cv_accuracy"]), pc(c["cv_balanced_accuracy"])] for c in M["model_comparison"]]
         return table(["Model", "Accuracy", "Balanced acc."], rows, num={1, 2}, hl=0)
 
-    def target_block(lead="Not in these experiments."):
+    def target_block(lead="Not reached."):
         rs = M["raw_split_comparison"]
         return [
             callout("warn", ui.HTML(
-                f"<b>{lead}</b> With repeats removed, the best model reached <b>{pc(T['accuracy'])}</b> on unseen records. "
-                f"Reaching 90% only happens when repeated rows leak across the split: on the file as supplied the same model scored {pc(rs['test_accuracy'])}, "
-                f"but {rs['test_rows_with_exact_copy_in_train']} of its {rs['test_rows']} test rows had an exact copy in training.")),
-            ui.p(f"Seven algorithms and a hyperparameter search were tried. None approached 90% on unique records "
-                 f"(best cross-validated accuracy {pc(M['model_comparison'][0]['cv_accuracy'])}). Both figures are reported openly so that readers can judge."),
+                f"<b>{lead}</b> With repeats removed, accuracy is <b>{pc(T['accuracy'])}</b> on unseen records. "
+                f"With repeats left in it is {pc(rs['test_accuracy'])}, because {rs['test_rows_with_exact_copy_in_train']} of {rs['test_rows']} test rows had a copy in training.")),
+            ui.p(f"Seven algorithms and tuning were tried. Best cross-validated accuracy: {pc(M['model_comparison'][0]['cv_accuracy'])}."),
         ]
 
     @render.ui
@@ -660,7 +640,8 @@ def server(input, output, session):
 
     @render.ui
     def about_target():
-        return ui.div(*target_block("Why not 90%?"))
+        rs = M["raw_split_comparison"]
+        return ui.p(f"Measured on unique records. With repeats left in, accuracy rises to {pc(rs['test_accuracy'])}.")
 
     @render.ui
     def imp_table():
@@ -670,7 +651,7 @@ def server(input, output, session):
             rows.append([L[f], f"{100 * IMP_MAP.loc[f, 'perm_mean']:+.1f} pts",
                          f"{100 * (DROP[f] - full):+.1f} pts"])
         return ui.div(table(["Activity", "Shuffle drop", "Retrain without"], rows, num={1, 2}),
-                      ui.p(f"Shuffle drop: accuracy lost on the test set. Retrain without: change in cross-validated accuracy ({pc(full)}) after removing the activity; negative means accuracy fell.", class_="sub", style="margin-top:10px"))
+                      ui.p(f"Shuffle drop: test accuracy lost. Retrain without: change in cross-validated accuracy ({pc(full)}).", class_="sub", style="margin-top:10px"))
 
     @render.ui
     def pdp_note():
@@ -679,11 +660,10 @@ def server(input, output, session):
         x, p = d["x"], d["p_high"]
         spread = max(p) - min(p)
         if spread < 0.06:
-            txt = f"Changing {L[f]} barely moves the average prediction (range {100 * spread:.0f} points), so the model gives it little weight."
+            txt = f"{L[f]} barely moves the prediction ({100 * spread:.0f} point range)."
         else:
-            txt = (f"Average chance of High moves from {pc(p[0], 0)} at {x[0]:g} to {pc(p[-1], 0)} at {x[-1]:g} "
-                   f"(a {'rise' if p[-1] > p[0] else 'fall'}), but the curve is {'not always steady' if any((p[i + 1] - p[i]) * (p[-1] - p[0]) < -0.02 for i in range(len(p) - 1)) else 'fairly steady'}. "
-                   "This describes the model, not what would happen to a real student who changed their behavior.")
+            txt = (f"Chance of High goes from {pc(p[0], 0)} at {x[0]:g} to {pc(p[-1], 0)} at {x[-1]:g}. "
+                   "This describes the model, not cause.")
         return ui.p(txt)
 
     @render.ui
@@ -693,14 +673,9 @@ def server(input, output, session):
 
     @render.ui
     def conf_note():
-        cal = M["calibration_curve"]
-        gap = max(abs(a - b) for a, b in zip(cal["predicted"], cal["observed"]))
         low = [b for b in M["confidence_bands"] if b["band"] in ("50-60%", "60-70%")]
         n_low = sum(b["n"] for b in low)
-        return ui.div(
-            ui.p(f"The largest gap between predicted and observed in the calibration chart is {100 * gap:.0f} points, so probabilities are "
-                 f"{'reasonably' if gap < 0.08 else 'only roughly'} calibrated. "
-                 f"{n_low} of {D['test_rows']} test predictions ({pc(n_low / D['test_rows'], 0)}) were below 70% confidence; treat those as close to a toss-up.", style="margin-top:10px"))
+        return ui.p(f"{n_low} of {D['test_rows']} predictions ({pc(n_low / D['test_rows'], 0)}) were under 70% confidence. Treat them as close to a toss-up.", style="margin-top:10px")
 
     @render.ui
     def findings():
@@ -716,23 +691,21 @@ def server(input, output, session):
         lo_acc, hi_acc = min(b["accuracy"] for b in lowb), max(b["accuracy"] for b in lowb)
         err_share = 1 - T["accuracy"]
         items = [
-            ("Which activities separate High from Low?",
-             f"The model leans most on {L[top3[0]]}, {L[top3[1]]} and {L[top3[2]]}. {', '.join(weak)} add almost nothing once the others are known."),
-            ("Where are the biggest raw differences?",
-             f"Quiz actions: median {q['median_high']:g} for High versus {q['median_low']:g} for Low. Forum actions: {fo['median_high']:g} versus {fo['median_low']:g}. "
-             "Students rated Low tend to have more of both. This does not show that quizzes or forums cause a Low rating; a student who is struggling may simply attempt or ask more."),
-            ("Does logging in more mean a High rating?",
-             f"Only modestly. Median days logged in are {dy['median_high']:g} (High) and {dy['median_low']:g} (Low). Inside the model, the average chance of High rises from "
-             f"{pc(dp['p_high'][0], 0)} at {dp['x'][0]:g} days to {pc(dp['p_high'][-1], 0)} at {dp['x'][-1]:g} days. It helps the model most in combination with other activities."),
+            ("Which activities matter most?",
+             f"{L[top3[0]]}, {L[top3[1]]} and {L[top3[2]]}." + (f" {', '.join(weak)} add little." if weak else "")),
+            ("Biggest raw differences",
+             f"Quiz actions: median {q['median_high']:g} High vs {q['median_low']:g} Low. Forum actions: {fo['median_high']:g} vs {fo['median_low']:g}. "
+             "Low-rated students have more of both. This does not show cause."),
+            ("Does logging in more mean High?",
+             f"Only modestly. Median days: {dy['median_high']:g} High, {dy['median_low']:g} Low. "
+             f"Chance of High rises from {pc(dp['p_high'][0], 0)} at {dp['x'][0]:g} days to {pc(dp['p_high'][-1], 0)} at {dp['x'][-1]:g} days."),
             ("One activity or several?",
-             f"Several. Removing any single activity changes cross-validated accuracy by at most {100 * abs(worst_drop[1] - full):.1f} points ({L[worst_drop[0]]}), "
-             "because related activities carry overlapping information."),
-            ("Which predictions deserve caution?",
-             f"Anything under 70% confidence ({n_low} of {D['test_rows']} test cases, right only about {pc(lo_acc, 0)} to {pc(hi_acc, 0)} of the time), Low predictions (F1 {pc(rep['Low']['f1-score'], 0)} vs {pc(rep['High']['f1-score'], 0)} for High), "
-             "and students with extreme counts, such as very high Read.Actions."),
-            ("How could a university use this?",
-             f"As an early screening cue: a Low estimate with high confidence can prompt a check-in or an offer of support. With about {pc(err_share, 0)} of predictions wrong ({pc(T['accuracy'])} accurate), "
-             "it should never decide a grade, label or penalty. Rating definitions and timing should be confirmed with the data owner before any real use."),
+             f"Several. Removing any one changes accuracy by at most {100 * abs(worst_drop[1] - full):.1f} points ({L[worst_drop[0]]})."),
+            ("Where to be careful",
+             f"Confidence under 70% ({n_low} of {D['test_rows']} cases, correct {pc(lo_acc, 0)} to {pc(hi_acc, 0)} of the time), "
+             f"Low predictions (F1 {pc(rep['Low']['f1-score'], 0)} vs {pc(rep['High']['f1-score'], 0)}), and extreme counts."),
+            ("Intended use",
+             f"An early cue to check in with a student. About {pc(err_share, 0)} of predictions are wrong, so it should never decide a grade or penalty."),
         ]
         return ui.div(*[ui.div(ui.div(str(i + 1), class_="ic"), ui.div(ui.tags.b(t), ui.p(b)), class_="finding")
                         for i, (t, b) in enumerate(items)], class_="panel")
