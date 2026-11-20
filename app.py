@@ -25,6 +25,7 @@ DEVELOPERS = ["Librea, Marrah Princess C."]
 COURSE_SECTION = "BSCS-DS 3"
 UNIVERSITY = "University of Southeastern Philippines"
 ACADEMIC_YEAR = "2026-2027"
+DEVELOPER_EMAIL = "mpclibrea01202401033@usep.edu.ph"
 # =====================================================================
 
 model = joblib.load(ROOT / "model.pkl")
@@ -134,14 +135,14 @@ sidebar = ui.div(
            nav_button("insights", "Insights"), nav_button("about", "About"), class_="nav"),
     ui.div(ui.div("Test accuracy", class_="k"),
            ui.div(pc(T["accuracy"]), class_="v"),
-           ui.p("For guidance only."),
+           ui.p("Decision-support estimate."),
            class_="side-card"),
     class_="side")
 
 # ---------------------------------------------------------------- HOME
 home = ui.div(
     ui.div(ui.h1("Student Performance Classifier"),
-           ui.p("Predicts a High or Low rating from a student's LMS activity."), class_="page-head"),
+           ui.p("Predicts whether a student is likely to pass or fail from LMS activity."), class_="page-head"),
     ui.div(
         stat("Unique records", f"{D['unique_rows']:,}", f"from {D['rows_supplied']:,} rows"),
         stat("Predictors", f"{D['n_predictors']}", "Activity counts"),
@@ -152,7 +153,7 @@ home = ui.div(
         ui.h2("How to use"),
         ui.div(
             ui.div(ui.div("1", class_="no"), ui.HTML("<b>Enter activity</b><span>Type eight LMS counts, or use a typical profile.</span>"), class_="step"),
-            ui.div(ui.div("2", class_="no"), ui.HTML("<b>Read the estimate</b><span>Rating, confidence and what drove it.</span>"), class_="step"),
+            ui.div(ui.div("2", class_="no"), ui.HTML("<b>Read the estimate</b><span>Likely outcome and confidence.</span>"), class_="step"),
             ui.div(ui.div("3", class_="no"), ui.HTML("<b>Check Insights</b><span>See which activities matter.</span>"), class_="step"),
             class_="steps"),
         ui.div(ui.input_action_button("cta_predict", "Make a prediction", class_="btn-cta p"),
@@ -176,7 +177,7 @@ def field(f):
 
 
 predict_page = ui.div(
-    ui.div(ui.h1("Predict"), ui.p("Enter LMS activity counts to estimate a High or Low rating."), class_="page-head"),
+    ui.div(ui.h1("Predict"), ui.p("Enter LMS activity counts to estimate whether a student is likely to pass or fail."), class_="page-head"),
     ui.div(
         ui.div(
             ui.h2("Student LMS activity"),
@@ -186,7 +187,7 @@ predict_page = ui.div(
                    ui.input_action_button("preset_low", "Typical Low values", class_="btn-ghost"),
                    ui.input_action_button("preset_reset", "Reset", class_="btn-ghost"), class_="preset-row"),
             ui.div(*[field(f) for f in FEATURES], class_="field-grid"),
-            ui.input_action_button("predict", "Predict rating", class_="btn-primary-x"),
+            ui.input_action_button("predict", "Predict outcome", class_="btn-primary-x"),
             class_="panel"),
         ui.div(
             ui.output_ui("result_panel"),
@@ -223,7 +224,7 @@ insights_page = ui.div(
 
     ui.div(ui.span("A. Dataset overview"), class_="section-title"),
     ui.div(
-        stat("Rows in file", f"{D['rows_supplied']:,}", "as supplied"),
+        stat("Rows in file", f"{D['rows_supplied']:,}", "before cleaning"),
         stat("Repeated rows", f"{D['exact_duplicate_copies']}", f"{pc(D['exact_duplicate_copies'] / D['rows_supplied'], 0)} of the file"),
         stat("Unique records", f"{D['unique_rows']:,}", "used for training and testing"),
         stat("High share (unique)", pc(D['class_counts_unique']['High'] / D['unique_rows'], 0), f"{D['class_counts_unique']['High']:,} High, {D['class_counts_unique']['Low']:,} Low"),
@@ -256,7 +257,7 @@ insights_page = ui.div(
         stat("Accuracy", pc(T["accuracy"]), f"95% range {pc(T['accuracy_ci95'][0])} to {pc(T['accuracy_ci95'][1])}"),
         stat("Balanced accuracy", pc(T["balanced_accuracy"]), "mean recall"),
         stat("Macro F1", pc(T["macro_f1"]), "mean F1"),
-        stat("ROC AUC", f"{T['roc_auc']:.2f}", "1.0 is perfect"),
+        stat("ROC AUC", f"{T['roc_auc']:.2f}", "area under curve"),
         class_="stat-strip"),
     ui.div(
         ui.div(ui.h2(f"Confusion matrix ({D['test_rows']} test records)"),
@@ -302,15 +303,13 @@ VAR_DESC = {
     "Delete.Actions": "Number of delete-related actions",
     "Days.Logged.In": "Number of days the student logged into the LMS",
 }
-dev_rows = "".join(
-    f'<div class="kv"><span class="k">Developer {i + 1}</span><span class="v">{n}</span></div>' for i, n in enumerate(DEVELOPERS))
 about_page = ui.div(
-    ui.div(ui.h1("About the project"), ui.p("Student rating prediction from LMS activity (High or Low)."), class_="page-head"),
+    ui.div(ui.h1("About the project"), ui.p("Pass or fail prediction from LMS activity."), class_="page-head"),
     ui.div(
         ui.div(
             ui.div(ui.h2("Purpose"),
-                   ui.p("Uses LMS activity (submissions, quizzes, forums, reads, logins) to classify a student's rating as High or Low, so instructors can spot who may need support early."),
-                   ui.p("Labels are the dataset's own High and Low. No Pass/Fail mapping was provided."), class_="panel"),
+                   ui.p("Uses LMS activity (submissions, quizzes, forums, reads, logins) to estimate whether a student is likely to pass or fail, so instructors can identify who may need support early."),
+                   ui.p("High is read as likely to pass and Low as likely to fail. The dataset provides High and Low labels only."), class_="panel"),
             ui.div(ui.h2("Dataset"),
                    ui.p(f"augmented_balanced_dataset_m.csv: {D['rows_supplied']:,} rows, 8 predictors, 1 target (rating). {D['exact_duplicate_copies']} repeated rows removed, leaving {D['unique_rows']:,} unique ({D['class_counts_unique']['High']:,} High, {D['class_counts_unique']['Low']:,} Low). Source not stated."),
                    table(["Variable", "Description"], [[f"<code>{f}</code>", VAR_DESC[f]] for f in FEATURES] +
@@ -330,8 +329,8 @@ about_page = ui.div(
                    ui.output_ui("about_target"), class_="panel"),
             ui.div(ui.h2("Interpreting a prediction"),
                    ui.HTML("""<ul class="clean">
-                   <li><b>High:</b> activity resembles High-rated students.</li>
-                   <li><b>Low:</b> activity resembles Low-rated students.</li>
+                   <li><b>Likely to pass:</b> activity resembles High-rated students.</li>
+                   <li><b>Likely to fail:</b> activity resembles Low-rated students.</li>
                    <li><b>Confidence:</b> accuracy by confidence level is on Insights.</li>
                    <li><b>Use:</b> a support cue alongside human judgment.</li></ul>"""),
                    class_="panel"),
@@ -354,7 +353,7 @@ about_page = ui.div(
                    kv("Language", "Python"), kv("Framework", "Shiny for Python"),
                    kv("Model package", "scikit-learn"), kv("Data", "pandas, NumPy"),
                    kv("Charts", "Matplotlib"), kv("Model file", "Joblib"), class_="panel"),
-            ui.div(ui.h2("Developers"), ui.HTML(dev_rows),
+            ui.div(ui.h2("Developer information"), kv("Developer", DEVELOPERS[0]), kv("Email", DEVELOPER_EMAIL),
                    kv("Course / Section", COURSE_SECTION), kv("University", UNIVERSITY), kv("Academic year", ACADEMIC_YEAR),
                    class_="panel"),
             class_="col-side"),
@@ -477,7 +476,7 @@ def server(input, output, session):
     def result_panel():
         if input.predict() == 0:
             return ui.div(ui.div(ui.tags.b("No prediction yet"),
-                                 "Enter values, then press Predict rating."), class_="empty panel")
+                                 "Enter values, then press Predict outcome."), class_="empty panel")
         r = result()
         if "errors" in r:
             return ui.div(ui.h2("Please fix the inputs"),
@@ -494,11 +493,11 @@ def server(input, output, session):
         bits.append(ui.p("Based on LMS activity only.", class_="sub"))
         return ui.div(
             ui.h2("Result"),
-            ui.div(ui.div(f"{r['label']} rating", class_=f"badge-res {'high' if hi else 'low'}"),
+            ui.div(ui.div("Likely to pass" if hi else "Likely to fail", class_=f"badge-res {'high' if hi else 'low'}"),
                    ui.div(ui.HTML(f"Model confidence<br><b>{pct_h if hi else pct_l:.1f}%</b>"), class_="conf"),
                    class_="result-top"),
             ui.HTML(f'<div class="prob"><div class="h" style="width:{pct_h:.1f}%"></div><div class="l" style="width:{pct_l:.1f}%"></div></div>'
-                    f'<div class="prob-legend"><span>High <b>{pct_h:.1f}%</b></span><span>Low <b>{pct_l:.1f}%</b></span></div>'),
+                    f'<div class="prob-legend"><span>Pass <b>{pct_h:.1f}%</b></span><span>Fail <b>{pct_l:.1f}%</b></span></div>'),
             ui.div(*bits, style="margin-top:14px"), class_="panel")
 
     @render.ui
