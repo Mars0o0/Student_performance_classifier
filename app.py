@@ -160,11 +160,10 @@ home = ui.div(
         class_="panel"),
     ui.div(
         ui.h2("Accuracy"),
-        callout("warn", ui.HTML(
-            f"<b>{pc(T['accuracy'])} on unseen records.</b> The file has {D['exact_duplicate_copies']} repeated rows. "
-            f"Left in, they appear in both training and test data and the score rises to {pc(M['raw_split_comparison']['test_accuracy'])}. "
-            "They are removed here.")),
-        ui.p(f"Always guessing High would be right about {pc(D['majority_baseline_train'], 0)} of the time."),
+        kv("Repeated rows removed", f"{D['exact_duplicate_copies']}"),
+        kv("Test accuracy", pc(T["accuracy"])),
+        kv("With repeats retained", pc(M["raw_split_comparison"]["test_accuracy"])),
+        kv("Majority-class baseline", pc(D["majority_baseline_train"], 0)),
         class_="panel"),
     class_="page")
 
@@ -209,7 +208,6 @@ predict_page = ui.div(
                        ui.div(ui.div("High recall", class_="k"), ui.div(pc(T["report"]["High"]["recall"]), class_="v"), class_="mini"),
                        ui.div(ui.div("Low recall", class_="k"), ui.div(pc(T["report"]["Low"]["recall"]), class_="v"), class_="mini"),
                        class_="mini-stats"),
-                ui.p("Recall: share of real students the model finds.", class_="sub", style="margin-top:12px"),
             ),
             class_="grid-2"),
         class_="panel"),
@@ -220,7 +218,7 @@ sel_choices = {f: L[f] for f in IMP_ORDER}
 insights_page = ui.div(
     ui.div(ui.h1("Insights"), ui.p("Data, model and reliability."), class_="page-head"),
 
-    ui.div(ui.span("Key findings"), ui.span("start here", class_="pill"), class_="section-title"),
+    ui.div(ui.span("Summary"), class_="section-title"),
     ui.output_ui("findings"),
 
     ui.div(ui.span("A. Dataset overview"), class_="section-title"),
@@ -232,30 +230,25 @@ insights_page = ui.div(
         class_="stat-strip"),
     ui.div(
         ui.div(ui.h2("Class balance"),
-               ui.p("Most repeated rows are Low.", class_="sub"),
                ui.output_ui("plot_balance"), class_="panel"),
         ui.div(ui.h2("Data quality"),
-               ui.HTML("<p>Repeated rows can land in both training and test sets and inflate accuracy.</p>"),
-               ui.HTML(f"<p>Near-copies cannot be detected. {D['conflicting_label_groups']} sets of identical inputs carry both labels.</p>"),
+               kv("Repeated rows", f"{D['exact_duplicate_copies']}"),
+               kv("Conflicting-label groups", f"{D['conflicting_label_groups']}"),
                ui.output_ui("desc_table"), class_="panel"),
         class_="grid-2"),
 
     ui.div(ui.span("B. Student activity analysis"), class_="section-title"),
     ui.div(
-        ui.h2("Activity by rating"),
-        ui.p("Log scale.", class_="sub"),
+        ui.h2("Activity by rating (log scale)"),
         ui.input_select("feat_pick", None, sel_choices, selected=IMP_ORDER[0]),
         ui.output_ui("plot_dist"),
         class_="panel"),
     ui.div(
         ui.div(ui.h2("Side-by-side comparison"),
-               ui.p("P(High > Low): chance a random High student has more than a random Low student. 0.50 means no difference.", class_="sub"),
                ui.output_ui("compare_table"),
                class_="panel"),
-        ui.div(ui.h2("Correlation"),
-               ui.p("Spearman.", class_="sub"),
-               ui.output_ui("plot_heat"),
-               ui.output_ui("heat_note"), class_="panel"),
+        ui.div(ui.h2("Correlation (Spearman)"),
+               ui.output_ui("plot_heat"), class_="panel"),
         class_="grid-2"),
 
     ui.div(ui.span("C. Model performance"), class_="section-title"),
@@ -266,43 +259,35 @@ insights_page = ui.div(
         stat("ROC AUC", f"{T['roc_auc']:.2f}", "1.0 is perfect"),
         class_="stat-strip"),
     ui.div(
-        ui.div(ui.h2("Confusion matrix"),
-               ui.p(f"Out of {D['test_rows']} unseen students.", class_="sub"),
-               ui.output_ui("plot_cm"),
-               ui.output_ui("cm_note"), class_="panel"),
+        ui.div(ui.h2(f"Confusion matrix ({D['test_rows']} test records)"),
+               ui.output_ui("plot_cm"), class_="panel"),
         ui.div(ui.h2("Per-class results"),
                ui.output_ui("report_table"),
                ui.h3("Models compared (5-fold CV)"),
                ui.output_ui("comparison_table"), class_="panel"),
         class_="grid-2"),
     ui.div(
-        ui.h2("The 90% target"),
+        ui.h2("Accuracy with and without repeated rows"),
         ui.output_ui("target_note"), class_="panel"),
 
     ui.div(ui.span("D. What the model relies on"), class_="section-title"),
     ui.div(
         ui.div(ui.h2("Permutation importance"),
-               ui.p("Accuracy lost when an activity is shuffled.", class_="sub"),
                ui.output_ui("plot_imp"),
                class_="panel"),
         ui.div(ui.h2("Drop-one check"),
-               ui.p("Accuracy change when an activity is removed.", class_="sub"),
                ui.output_ui("imp_table"), class_="panel"),
         class_="grid-2"),
     ui.div(
         ui.h2("Effect of each activity"),
-        ui.p("Average chance of High as one activity changes.", class_="sub"),
         ui.input_select("pdp_pick", None, sel_choices, selected=IMP_ORDER[0]),
-        ui.output_ui("plot_pdp"),
-        ui.output_ui("pdp_note"), class_="panel"),
+        ui.output_ui("plot_pdp"), class_="panel"),
     ui.div(ui.span("E. Reliability"), class_="section-title"),
     ui.div(
         ui.div(ui.h2("Calibration"),
-               ui.p("Closer to the dashed line is better.", class_="sub"),
                ui.output_ui("plot_cal"), class_="panel"),
-        ui.div(ui.h2("Accuracy by confidence"),
-               ui.p("Unseen test records, grouped by confidence.", class_="sub"),
-               ui.output_ui("conf_table"), ui.output_ui("conf_note"), class_="panel"),
+        ui.div(ui.h2("Accuracy by confidence (test records)"),
+               ui.output_ui("conf_table"), class_="panel"),
         class_="grid-2"),
     class_="page")
 
@@ -345,18 +330,18 @@ about_page = ui.div(
                    ui.output_ui("about_target"), class_="panel"),
             ui.div(ui.h2("Interpreting a prediction"),
                    ui.HTML("""<ul class="clean">
-                   <li><b>High:</b> resembles High-rated students. Not a guarantee of success.</li>
-                   <li><b>Low:</b> resembles Low-rated students. Not a prediction of failure.</li>
-                   <li>Confidence is least reliable between 50% and 70%.</li>
-                   <li>Use it to start a conversation or offer support, not to decide alone.</li></ul>"""),
+                   <li><b>High:</b> activity resembles High-rated students.</li>
+                   <li><b>Low:</b> activity resembles Low-rated students.</li>
+                   <li><b>Confidence:</b> accuracy by confidence level is on Insights.</li>
+                   <li><b>Use:</b> a support cue alongside human judgment.</li></ul>"""),
                    class_="panel"),
             ui.div(ui.h2("Limitations"),
                    ui.HTML(f"""<ul class="clean">
-                   <li><b>Data:</b> augmented file with {D['exact_duplicate_copies']} repeated rows. Near-copies may remain, so real accuracy may be below {pc(T['accuracy'], 0)}.</li>
-                   <li><b>Clicks, not learning:</b> offline or group study looks inactive. The rating's definition is not documented.</li>
-                   <li><b>One course population:</b> other courses or terms may differ. Very large values are rare in training.</li>
-                   <li><b>Not causal:</b> importance shows what the model uses, not why ratings differ.</li>
-                   <li><b>Errors matter:</b> a wrong Low may label a student unfairly; a wrong High may miss someone who needs help. About {pc(1 - T['accuracy'], 0)} of test predictions were wrong.</li></ul>"""),
+                   <li><b>Data:</b> augmented file; {D['exact_duplicate_copies']} repeated rows removed. Near-copies may remain.</li>
+                   <li><b>Measures:</b> LMS click counts. Offline study is not captured; the rating's definition is not documented.</li>
+                   <li><b>Scope:</b> one course population; very large values are sparse in training.</li>
+                   <li><b>Interpretation:</b> importance reflects model use, not cause.</li>
+                   <li><b>Errors:</b> about {pc(1 - T['accuracy'], 0)} of test predictions were incorrect.</li></ul>"""),
                    class_="panel"),
             class_="col-main"),
         ui.div(
@@ -499,20 +484,14 @@ def server(input, output, session):
                           callout("err", ui.HTML("<br>".join(r["errors"]))), class_="panel")
         hi = r["label"] == "High"
         pct_h, pct_l = 100 * r["p"], 100 * (1 - r["p"])
-        meaning = ("Resembles students rated <b>High</b>." if hi else "Resembles students rated <b>Low</b>.")
-        bits = [ui.HTML(f"<p>{meaning} Not a pass or fail prediction.</p>")]
+        bits = []
         if r["band"]:
-            tone = "warn" if r["conf"] < 0.7 else "info"
-            txt = (f"Predictions at this confidence ({r['band']['band']}) were correct "
-                   f"{pc(r['band']['accuracy'], 0)} of the time ({r['band']['n']} records).")
-            if r["conf"] < 0.7:
-                txt = "<b>Uncertain.</b> " + txt
-            bits.append(callout(tone, ui.HTML(txt)))
+            bits.append(callout("info", ui.HTML(
+                f"Accuracy at {r['band']['band']} confidence: <b>{pc(r['band']['accuracy'], 0)}</b> ({r['band']['n']} test records).")))
         if r["outliers"]:
-            bits.append(callout("warn", ui.HTML(
-                "<b>Unusually high:</b> " + ", ".join(r["outliers"]) +
-                " is above 99% of training records.")))
-        bits.append(ui.p("Estimate only. It should support, not replace, human judgment.", class_="sub"))
+            bits.append(callout("info", ui.HTML(
+                "Above the 99th percentile of training data: " + ", ".join(r["outliers"]) + ".")))
+        bits.append(ui.p("Based on LMS activity only.", class_="sub"))
         return ui.div(
             ui.h2("Result"),
             ui.div(ui.div(f"{r['label']} rating", class_=f"badge-res {'high' if hi else 'low'}"),
@@ -531,10 +510,8 @@ def server(input, output, session):
             return ui.div()
         return ui.div(
             ui.div(ui.h2("Where this student sits"),
-                   ui.p("Percentile against training records.", class_="sub"),
                    ui.output_ui("plot_profile"), class_="panel"),
             ui.div(ui.h2("What pushed this prediction"),
-                   ui.p("Blue raises the chance of High. Amber lowers it.", class_="sub"),
                    ui.output_ui("plot_local"), class_="panel"))
 
     @plot_ui("Where the entered student sits compared with typical High and Low students")
@@ -594,44 +571,24 @@ def server(input, output, session):
         return table(["Activity", "Median High", "Median Low", "P(High > Low)", "p-value"], rows, num={1, 2, 3, 4})
 
     @render.ui
-    def heat_note():
-        pairs = []
-        for i, a in enumerate(FEATURES):
-            for b in FEATURES[i + 1:]:
-                pairs.append((abs(CORR.loc[a, b]), a, b, CORR.loc[a, b]))
-        pairs.sort(reverse=True)
-        top = pairs[:3]
-        txt = "; ".join(f"{L[a]} and {L[b]} ({v:+.2f})" for _, a, b, v in top)
-        return ui.p(f"Strongest links: {txt}.", class_="sub")
-
-    @render.ui
-    def cm_note():
-        (a, b), (c, d) = T["confusion_matrix"]
-        return ui.HTML(f"<p>Correct: {a + d} of {a + b + c + d}. A High student predicted Low: <b>{b}</b>. A Low student predicted High: <b>{c}</b>.</p>")
-
-    @render.ui
     def report_table():
         rep = T["report"]
         rows = [[c, pc(rep[c]["precision"]), pc(rep[c]["recall"]), pc(rep[c]["f1-score"]), f"{int(rep[c]['support'])}"] for c in ("High", "Low")]
-        gap = rep["High"]["f1-score"] - rep["Low"]["f1-score"]
-        note = (f"Low is harder to predict: F1 is {abs(gap) * 100:.0f} points lower." if gap > 0.03
-                else "Similar performance for both classes.")
-        return ui.div(table(["Class", "Precision", "Recall", "F1", "Records"], rows, num={1, 2, 3, 4}),
-                      ui.p("Precision: how often a prediction is right. Recall: how many real students are found.", class_="sub", style="margin-top:10px"),
-                      ui.p(note))
+        return table(["Class", "Precision", "Recall", "F1", "Records"], rows, num={1, 2, 3, 4})
 
     @render.ui
     def comparison_table():
         rows = [[c["model"], pc(c["cv_accuracy"]), pc(c["cv_balanced_accuracy"])] for c in M["model_comparison"]]
         return table(["Model", "Accuracy", "Balanced acc."], rows, num={1, 2}, hl=0)
 
-    def target_block(lead="Not reached."):
+    def target_block():
         rs = M["raw_split_comparison"]
         return [
-            callout("warn", ui.HTML(
-                f"<b>{lead}</b> With repeats removed, accuracy is <b>{pc(T['accuracy'])}</b> on unseen records. "
-                f"With repeats left in it is {pc(rs['test_accuracy'])}, because {rs['test_rows_with_exact_copy_in_train']} of {rs['test_rows']} test rows had a copy in training.")),
-            ui.p(f"Seven algorithms and tuning were tried. Best cross-validated accuracy: {pc(M['model_comparison'][0]['cv_accuracy'])}."),
+            kv("Accuracy, repeats removed", pc(T["accuracy"])),
+            kv("Accuracy, repeats retained", pc(rs["test_accuracy"])),
+            kv("Test rows with a training copy", f"{rs['test_rows_with_exact_copy_in_train']} of {rs['test_rows']}"),
+            kv("Algorithms compared", "7"),
+            kv("Best cross-validated accuracy", pc(M["model_comparison"][0]["cv_accuracy"])),
         ]
 
     @render.ui
@@ -641,7 +598,7 @@ def server(input, output, session):
     @render.ui
     def about_target():
         rs = M["raw_split_comparison"]
-        return ui.p(f"Measured on unique records. With repeats left in, accuracy rises to {pc(rs['test_accuracy'])}.")
+        return kv("Accuracy with repeats retained", pc(rs["test_accuracy"]))
 
     @render.ui
     def imp_table():
@@ -650,32 +607,12 @@ def server(input, output, session):
         for f in IMP_ORDER:
             rows.append([L[f], f"{100 * IMP_MAP.loc[f, 'perm_mean']:+.1f} pts",
                          f"{100 * (DROP[f] - full):+.1f} pts"])
-        return ui.div(table(["Activity", "Shuffle drop", "Retrain without"], rows, num={1, 2}),
-                      ui.p(f"Shuffle drop: test accuracy lost. Retrain without: change in cross-validated accuracy ({pc(full)}).", class_="sub", style="margin-top:10px"))
-
-    @render.ui
-    def pdp_note():
-        f = input.pdp_pick()
-        d = M["pdp"][f]
-        x, p = d["x"], d["p_high"]
-        spread = max(p) - min(p)
-        if spread < 0.06:
-            txt = f"{L[f]} barely moves the prediction ({100 * spread:.0f} point range)."
-        else:
-            txt = (f"Chance of High goes from {pc(p[0], 0)} at {x[0]:g} to {pc(p[-1], 0)} at {x[-1]:g}. "
-                   "This describes the model, not cause.")
-        return ui.p(txt)
+        return table(["Activity", "Shuffle drop", "Retrain without"], rows, num={1, 2})
 
     @render.ui
     def conf_table():
         rows = [[b["band"], f"{b['n']}", pc(b["accuracy"], 0)] for b in M["confidence_bands"]]
         return table(["Model confidence", "Test records", "Actually correct"], rows, num={1, 2})
-
-    @render.ui
-    def conf_note():
-        low = [b for b in M["confidence_bands"] if b["band"] in ("50-60%", "60-70%")]
-        n_low = sum(b["n"] for b in low)
-        return ui.p(f"{n_low} of {D['test_rows']} predictions ({pc(n_low / D['test_rows'], 0)}) were under 70% confidence. Treat them as close to a toss-up.", style="margin-top:10px")
 
     @render.ui
     def findings():
@@ -691,21 +628,12 @@ def server(input, output, session):
         lo_acc, hi_acc = min(b["accuracy"] for b in lowb), max(b["accuracy"] for b in lowb)
         err_share = 1 - T["accuracy"]
         items = [
-            ("Which activities matter most?",
-             f"{L[top3[0]]}, {L[top3[1]]} and {L[top3[2]]}." + (f" {', '.join(weak)} add little." if weak else "")),
-            ("Biggest raw differences",
-             f"Quiz actions: median {q['median_high']:g} High vs {q['median_low']:g} Low. Forum actions: {fo['median_high']:g} vs {fo['median_low']:g}. "
-             "Low-rated students have more of both. This does not show cause."),
-            ("Does logging in more mean High?",
-             f"Only modestly. Median days: {dy['median_high']:g} High, {dy['median_low']:g} Low. "
-             f"Chance of High rises from {pc(dp['p_high'][0], 0)} at {dp['x'][0]:g} days to {pc(dp['p_high'][-1], 0)} at {dp['x'][-1]:g} days."),
-            ("One activity or several?",
-             f"Several. Removing any one changes accuracy by at most {100 * abs(worst_drop[1] - full):.1f} points ({L[worst_drop[0]]})."),
-            ("Where to be careful",
-             f"Confidence under 70% ({n_low} of {D['test_rows']} cases, correct {pc(lo_acc, 0)} to {pc(hi_acc, 0)} of the time), "
-             f"Low predictions (F1 {pc(rep['Low']['f1-score'], 0)} vs {pc(rep['High']['f1-score'], 0)}), and extreme counts."),
-            ("Intended use",
-             f"An early cue to check in with a student. About {pc(err_share, 0)} of predictions are wrong, so it should never decide a grade or penalty."),
+            ("Top activities", f"{L[top3[0]]}, {L[top3[1]]}, {L[top3[2]]}"),
+            ("Median quiz actions", f"High {q['median_high']:g}, Low {q['median_low']:g}"),
+            ("Median forum actions", f"High {fo['median_high']:g}, Low {fo['median_low']:g}"),
+            ("Median days logged in", f"High {dy['median_high']:g}, Low {dy['median_low']:g}"),
+            ("Confidence under 70%", f"{n_low} of {D['test_rows']} test records, {pc(lo_acc, 0)} to {pc(hi_acc, 0)} correct"),
+            ("F1 by class", f"High {pc(rep['High']['f1-score'], 0)}, Low {pc(rep['Low']['f1-score'], 0)}"),
         ]
         return ui.div(*[ui.div(ui.div(str(i + 1), class_="ic"), ui.div(ui.tags.b(t), ui.p(b)), class_="finding")
                         for i, (t, b) in enumerate(items)], class_="panel")
